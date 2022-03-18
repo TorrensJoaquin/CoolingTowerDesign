@@ -1,13 +1,13 @@
 let DryGas = new FlowStream();
 let WetGas = new FlowStream();
 let aux;
-let SumOfComponents = 100;
 let Background = [];
 let webButtons = [];
 let IsCircleIncreasing = false;
 let SizeOfCircle = 0;
 let WaterOverMouse = new WaterProperties();
 let WaterSaturation = new WaterProperties();
+let AbsoluteMolarHumidity = 0;
 let Screen = {
     XCanvas: 1360,
     YCanvas: 768,
@@ -15,11 +15,11 @@ let Screen = {
     Xmax: 1360,
     Ymin: 92,
     Ymax: 768,
-    HMin: 0,    //kW/kg
-    HMax: 45,   //kW/kg
-    HMinSP: 0,  //kW/kg
-    HMaxSP: 45, //kW/kg
-    HVelMax: 0.03,
+    EnthalpyMin: -30,       // kJ/Kg d.a.
+    EnthalpyMax: 120,    // kJ/Kg d.a.
+    EnthalpyMinSP: -30,     // kJ/Kg d.a.
+    EnthalpyMaxSP: 120,  // kJ/Kg d.a.
+    EnthalpyVelMax: 0.5,
     tempMin: 273.15 - 10,  //°K
     tempMax: 273.15 + 55,  //°K
     tempMinSP: -10, //°C
@@ -27,23 +27,23 @@ let Screen = {
     tempVelMax: 0.5,
     SelectedHumidity: 0
 }
-function MoveToTheRequestedRange(){
-    if(isNumber(Screen.HMinSP)){
-        if(Screen.HMin > Screen.HMinSP + Screen.HVelMax){
-            Screen.HMin = Screen.HMin - Screen.HVelMax;
-        }else if(Screen.HMin < Screen.HMinSP - Screen.HVelMax){
-            Screen.HMin = Screen.HMin + Screen.HVelMax;
-        }else{
-            Screen.HMin = Screen.HMinSP;
+function MoveToTheRequestedRange() {
+    if (isNumber(Screen.EnthalpyMinSP)) {
+        if (Screen.EnthalpyMin > Screen.EnthalpyMinSP + Screen.EnthalpyVelMax) {
+            Screen.EnthalpyMin = Screen.EnthalpyMin - Screen.EnthalpyVelMax;
+        } else if (Screen.EnthalpyMin < Screen.EnthalpyMinSP - Screen.EnthalpyVelMax) {
+            Screen.EnthalpyMin = Screen.EnthalpyMin + Screen.EnthalpyVelMax;
+        } else {
+            Screen.EnthalpyMin = Screen.EnthalpyMinSP;
         }
     }
-    if(isNumber(Screen.HMaxSP)){
-        if(Screen.HMax > Screen.HMaxSP + Screen.HVelMax){
-            Screen.HMax = Screen.HMax - Screen.HVelMax;
-        }else if(Screen.HMax < Screen.HMaxSP - Screen.HVelMax) {
-            Screen.HMax = Screen.HMax + Screen.HVelMax;
-        }else{
-            Screen.HMax = Screen.HMaxSP;
+    if (isNumber(Screen.EnthalpyMaxSP)) {
+        if (Screen.EnthalpyMax > Screen.EnthalpyMaxSP + Screen.EnthalpyVelMax) {
+            Screen.EnthalpyMax = Screen.EnthalpyMax - Screen.EnthalpyVelMax;
+        } else if (Screen.EnthalpyMax < Screen.EnthalpyMaxSP - Screen.EnthalpyVelMax) {
+            Screen.EnthalpyMax = Screen.EnthalpyMax + Screen.EnthalpyVelMax;
+        } else {
+            Screen.EnthalpyMax = Screen.EnthalpyMaxSP;
         }
     }
     if (isNumber(Screen.tempMinSP)) {
@@ -71,7 +71,7 @@ function MoveToTheRequestedRange(){
 function preload() {
     Background[0] = loadImage('Images/Background.png');
     Background[1] = loadImage('Images/Background_x.png');
-    webButtons[0] = new WebButton([1050, 0], loadImage('Images/ChangeGasComposition_A.jpg'), loadImage('Images/ChangeGasComposition_B.jpg'), loadImage('Images/ChangeGasComposition_C.jpg'));
+    webButtons[0] = new WebButton([750, 0], loadImage('Images/ChangeGasComposition_A.jpg'), loadImage('Images/ChangeGasComposition_B.jpg'), loadImage('Images/ChangeGasComposition_C.jpg'));
     webButtons[1] = new WebButton([380, 620], loadImage('Images/Clear_A.jpg'), loadImage('Images/Clear_B.jpg'), loadImage('Images/Clear_C.jpg'));
     webButtons[2] = new WebButton([430, 230], loadImage('Images/Update_Gas_Composition_A.jpg'), loadImage('Images/Update_Gas_Composition_B.jpg'), loadImage('Images/Update_Gas_Composition_C.jpg'));
 }
@@ -83,17 +83,17 @@ function setup() {
     // DOM Inputs
     inpPressure = createInput(DryGas.Pressure.toString());
     inpPressure.size(40, 30);
-    inpPressure.position(805, 33);
+    inpPressure.position(1100, 33);
     inpMinTemperarure = createInput(Screen.tempMinSP.toString());
     inpMinTemperarure.size(30, 15);
     inpMinTemperarure.position(21, 751);
     inpMaxTemperarure = createInput(Screen.tempMaxSP.toString());
     inpMaxTemperarure.size(30, 15);
     inpMaxTemperarure.position(1277, 751);
-    inpMinEnthalpy = createInput(Screen.HMinSP.toString());
+    inpMinEnthalpy = createInput(Screen.EnthalpyMinSP.toString());
     inpMinEnthalpy.size(33, 15);
     inpMinEnthalpy.position(1303, 716);
-    inpMaxEnthalpy = createInput(Screen.HMax.toString());
+    inpMaxEnthalpy = createInput(Screen.EnthalpyMax.toString());
     inpMaxEnthalpy.size(33, 15);
     inpMaxEnthalpy.position(1303, 109);
     //// Air
@@ -107,7 +107,7 @@ function draw() {
     MoveToTheRequestedRange();
     if (webButtons[0].activated) {
         image(Background[1], 0, 0);
-        SumOfComponents = 0;
+        let SumOfComponents = 0;
         SumOfComponents += UpdateComponent(inpMethane);
         SumOfComponents += UpdateComponent(inpNitrogen);
         SumOfComponents += UpdateComponent(inpCarbonDioxide);
@@ -145,28 +145,19 @@ function draw() {
             Temperature: 0,
             Enthalpy: 0,
             TemperatureScreen: map(Screen.tempMin, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
-            EnthalpyScreen: map(Screen.HMax, Screen.HMin, Screen.HMax, Screen.Ymin, Screen.Ymax)
+            EnthalpyScreen: map(Screen.EnthalpyMax, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymin, Screen.Ymax)
         }
         let New = {
             TemperatureScreen: map(Screen.tempMin, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
-            EnthalpyScreen: map(Screen.HMin, Screen.HMin, Screen.HMax, Screen.Ymin, Screen.Ymax),
+            EnthalpyScreen: map(Screen.EnthalpyMin, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymin, Screen.Ymax),
         }
         let Resolution = 100;
-        for (let i = 0; i < Resolution; i++) {
+        for (let i = 0; i < Resolution; i++){
             WaterSaturation.Temperature = map(i, 0, Resolution - 1, Screen.tempMin, Screen.tempMax);
-            WaterSaturation.Pressure = RegretionByPoints(WaterSaturation.Temperature, Vapor.Temperature, Vapor.Pressure);
-            WaterSaturation.DensityLiquid = RegretionByPoints(WaterSaturation.Temperature, Vapor.Temperature, Vapor.DensityLiquid);
-            WaterSaturation.DensityVapor = RegretionByPoints(WaterSaturation.Temperature, Vapor.Temperature, Vapor.DensityVapor);
-            WaterSaturation.EnthalpyVaporization = RegretionByPoints(WaterSaturation.Temperature, Vapor.Temperature, Vapor.EnthalpyVaporization);
-            // Gas without taking into account tha vapor content.
-            DryGas.Temperature = WaterSaturation.Temperature;
-            DryGas.CalculateDensity(1);
-            DryGas.MassDensity = DryGas.Density * DryGas.MolarMass;
-            //
-            WaterSaturation.EnthalpyVaporization2 = WaterSaturation.EnthalpyVaporization * WaterSaturation.DensityVapor / DryGas.MassDensity * 0.277778;
-            //Draw
+            WaterSaturation.EnthalpyVaporization = Vapor.GetEnthalpy(WaterSaturation.Temperature, 1, DryGas);
+            // Draw
             New.TemperatureScreen = map(WaterSaturation.Temperature, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax);
-            New.EnthalpyScreen = map(WaterSaturation.EnthalpyVaporization2, Screen.HMin, Screen.HMax, Screen.Ymax, Screen.Ymin);
+            New.EnthalpyScreen = map(WaterSaturation.EnthalpyVaporization, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin);
             line(Old.TemperatureScreen, Old.EnthalpyScreen, New.TemperatureScreen, New.EnthalpyScreen);
             //
             Old.TemperatureScreen = New.TemperatureScreen;
@@ -175,82 +166,46 @@ function draw() {
         if (mouseX > Screen.Xmin && mouseX < Screen.Xmax && mouseY > Screen.Ymin && mouseY < Screen.Ymax) {
             // Vapor where the mouse is.
             WaterOverMouse.Temperature = map(mouseX, Screen.Xmin, Screen.Xmax, Screen.tempMin, Screen.tempMax);
-            WaterOverMouse.EnthalpyVaporization2 = map(mouseY, Screen.Ymin, Screen.Ymax, Screen.HMax, Screen.HMin);
-            //WaterOverMouse.DensityVapor = RegretionByPoints(WaterOverMouse.Temperature, Vapor.Temperature, Vapor.DensityVapor);
-            WaterOverMouse.EnthalpyVaporization = DryGas.MassDensity / (WaterOverMouse.EnthalpyVaporization2 * WaterOverMouse.DensityVapor * 0.277778);
-            WaterOverMouse.molDensityVapor = RegretionByPoints(WaterOverMouse.Temperature, Vapor.Temperature, Vapor.molDensityVapor);
-            WaterOverMouse.EntropyVaporization = RegretionByPoints(WaterOverMouse.Temperature, Vapor.Temperature, Vapor.EntropyVaporization);
+            WaterOverMouse.EnthalpyVaporization = map(mouseY, Screen.Ymin, Screen.Ymax, Screen.EnthalpyMax, Screen.EnthalpyMin);
+            Screen.SelectedHumidity = Vapor.GetRelativeHumidity(WaterOverMouse.EnthalpyVaporization, WaterOverMouse.Temperature, DryGas)
+            WaterOverMouse.DensityVapor = RegretionByPoints(WaterOverMouse.Temperature, Vapor.Temperature, Vapor.DensityVapor) * Screen.SelectedHumidity;
+            WaterOverMouse.DewTemperature = Vapor.GetDewTemperature(WaterOverMouse.DensityVapor);
+            WaterOverMouse.WetBulbTemperature = Vapor.GetWetBulbTemperature(WaterOverMouse.EnthalpyVaporization, DryGas);
             // Vapor if the Relative Humidity were 100%
             WaterSaturation.Temperature = WaterOverMouse.Temperature;
             WaterSaturation.Pressure = RegretionByPoints(WaterSaturation.Temperature, Vapor.Temperature, Vapor.Pressure);
             WaterSaturation.DensityVapor = RegretionByPoints(WaterSaturation.Temperature, Vapor.Temperature, Vapor.DensityVapor);
-            Screen.SelectedHumidity = (WaterOverMouse.DensityVapor / WaterSaturation.DensityVapor) * 100;
-            // Gas without taking in account tha vapor content.
+            WaterSaturation.molDensityVapor = RegretionByPoints(WaterOverMouse.Temperature, Vapor.Temperature, Vapor.molDensityVapor);
+            // Gas without taking into account tha vapor content.
             DryGas.Temperature = WaterOverMouse.Temperature;
             DryGas.CalculateDensity(1);
             DryGas.MassDensity = DryGas.Density * DryGas.MolarMass;
-            //
-            WaterOverMouse.EntropyVaporization2 = WaterOverMouse.EntropyVaporization * WaterOverMouse.DensityVapor / DryGas.MassDensity * 0.277778;
             // Gas taking in account tha vapor content.
-            let AbsoluteMolarHumidity = WaterOverMouse.molDensityVapor / DryGas.Density * Screen.SelectedHumidity;
-            WetGas.Temperature = WaterOverMouse.Temperature;
-            WetGas.Pressure = DryGas.Pressure;
-            WetGas.x[1] = DryGas.x[1];
-            WetGas.x[2] = DryGas.x[2];
-            WetGas.x[3] = DryGas.x[3];
-            WetGas.x[4] = DryGas.x[4];
-            WetGas.x[5] = DryGas.x[5];
-            WetGas.x[6] = DryGas.x[6];
-            WetGas.x[7] = DryGas.x[7];
-            WetGas.x[8] = DryGas.x[8];
-            WetGas.x[9] = DryGas.x[9];
-            WetGas.x[10] = DryGas.x[10];
-            WetGas.x[11] = DryGas.x[11];
-            WetGas.x[12] = DryGas.x[12];
-            WetGas.x[13] = DryGas.x[13];
-            WetGas.x[14] = DryGas.x[14];
-            WetGas.x[15] = DryGas.x[15];
-            WetGas.x[16] = DryGas.x[16];
-            WetGas.x[17] = DryGas.x[17];
-            WetGas.x[18] = DryGas.x[18];
-            WetGas.x[19] = DryGas.x[19];
-            WetGas.x[20] = DryGas.x[20];
-            WetGas.x[21] = DryGas.x[21];
-            WetGas.addWater(AbsoluteMolarHumidity * 0.01);
-            SumOfComponents = 0;
-            for (let i = 1; i <= 21; i++) {
-                SumOfComponents = SumOfComponents + WetGas.x[i];
-            }
-            for (let i = 1; i <= 21; i++) {
-                WetGas.x[i] = WetGas.x[i] / SumOfComponents;
-            }
-            WetGas.CalculateDensity(1);
-            WetGas.MassDensity = WetGas.Density * WetGas.MolarMass;
+            AbsoluteMolarHumidity = WaterSaturation.molDensityVapor / DryGas.Density * Screen.SelectedHumidity;
+            let AbsoluteMassHumidity = WaterOverMouse.DensityVapor / DryGas.MassDensity;
+            WetGas = WetGasCalculations(DryGas, AbsoluteMolarHumidity);
+            // Enthalpy
+            let AirContributionToEntropy = DryGas.H / DryGas.MolarMass;
+            // Vapor Enthalpy.
+            let WaterContributionToEntropy = RegretionByPoints(WaterOverMouse.Temperature, Vapor.Temperature, Vapor.EnthalpyVaporization);
+            // Balance
+            Entropy = AirContributionToEntropy + WaterContributionToEntropy * AbsoluteMassHumidity;
             //
-            if (Screen.SelectedHumidity < 100.9) {
+            if(Screen.SelectedHumidity < 0.995){
                 aux = 115;
-                text('Humedad Relativa: ' + (Screen.SelectedHumidity).toFixed(1) + ' %', 10, aux);
-                aux += 20;
-                text('Humedad Absoluta: ' + (1000 * WaterOverMouse.DensityVapor / DryGas.MassDensity).toFixed(3) + ' g agua / kg gas seco', 10, aux);
-                aux += 20;
-                text('Humedad Absoluta Volumetrica: ' + WaterOverMouse.DensityVapor.toFixed(3) + ' kg Agua/m3', 10, aux);
-                aux += 20;
-                text('Humedad Absoluta Molar: ' + (AbsoluteMolarHumidity).toFixed(3) + '% mol agua / mol gas seco', 10, aux);
-                aux += 20;
-                text('Entalpia de Vaporización: ' + (WaterOverMouse.EnthalpyVaporization2).toFixed(2) + ' Wh/[kg gas seco]', 10, aux); // KJ/kg H2O * kg H2O/m3 / kg Aire/m3
-                aux += 20;
-                text('Entropia de Vaporización: ' + (WaterOverMouse.EntropyVaporization2).toFixed(2) + ' Wh/[kg gas seco K]', 10, aux); // KJ/kg H2O * kg H2O/m3 / kg Aire/m3
-                aux += 20;
-                text('Temperatura: ' + (WaterOverMouse.Temperature - 273.15).toFixed(2) + ' °C', 10, aux);
-                aux += 20;
-                text('Presión: ' + WetGas.Pressure.toFixed(1) + ' kPa', 10, aux);
-                aux += 20;
-                text('Densidad: ' + WetGas.MassDensity.toFixed(3) + ' kg/m3', 10, aux);
-                aux += 20;
-                text('Velocidad del Sonido: ' + WetGas.SpeedOfSound.toFixed(2) + ' m/s', 10, aux);
-                aux += 20;
-                text('Composición: ', 10, aux);
-                aux += 20;
+                text('Temperatura: ' + (WaterOverMouse.Temperature - 273.15).toFixed(2) + ' °C', 10, aux);aux += 20;
+                text('Temperatura de rocío: ' + (WaterOverMouse.DewTemperature-273.15).toFixed(1) + '°C', 10, aux);aux += 20;
+                text('Temperatura de bulbo húmedo: ' + (WaterOverMouse.WetBulbTemperature-273.15).toFixed(1) + '°C', 10, aux);aux += 20;
+                text('Humedad Relativa: ' + (100 * Screen.SelectedHumidity).toFixed(1) + ' %', 10, aux);aux += 20;
+                text('Humedad Absoluta: ' + (1000 * AbsoluteMassHumidity).toFixed(3) + ' g agua / kg gas seco', 10, aux);aux += 20;
+                text('Humedad Absoluta Volumetrica: ' + WaterOverMouse.DensityVapor.toFixed(3) + ' kg Agua/m3', 10, aux);aux += 20;
+                text('Humedad Absoluta Molar: ' + (AbsoluteMolarHumidity).toFixed(3) + '% mol agua / mol gas seco', 10, aux);aux += 20;
+                text('Entalpia: ' + (WaterOverMouse.EnthalpyVaporization).toFixed(2) + ' kJ/kg gas seco', 10, aux);aux += 20;
+                text('Entropia: ' + (Entropy).toFixed(2) + ' kJ/[kg gas seco K]', 10, aux);aux += 20;
+                text('Presión: ' + WetGas.Pressure.toFixed(1) + ' kPa', 10, aux);aux += 20;
+                text('Densidad: ' + WetGas.MassDensity.toFixed(3) + ' kg/m3', 10, aux);aux += 20;
+                text('Velocidad del Sonido: ' + WetGas.SpeedOfSound.toFixed(2) + ' m/s', 10, aux);aux += 20;
+                text('Composición: ', 10, aux);aux += 20;
                 WriteElementIfExist('Metano', 1);
                 WriteElementIfExist('Nitrogeno', 2);
                 WriteElementIfExist('Dioxido de carbono', 3);
@@ -284,23 +239,57 @@ function UploadTheInputs() {
     DryGas.Pressure = UpdateComponent(inpPressure);
     Screen.tempMinSP = UpdateComponent(inpMinTemperarure);
     Screen.tempMaxSP = UpdateComponent(inpMaxTemperarure);
-    Screen.HMinSP = UpdateComponent(inpMinEnthalpy);
-    Screen.HMaxSP = UpdateComponent(inpMaxEnthalpy);
+    Screen.EnthalpyMinSP = UpdateComponent(inpMinEnthalpy);
+    Screen.EnthalpyMaxSP = UpdateComponent(inpMaxEnthalpy);
 }
-function AnimationsOverTheMouse() {
+function AnimationsOverTheMouse(){
+    push();
+    strokeWeight(2+SizeOfCircle*0.25);
     line(mouseX, mouseY, mouseX, Screen.YCanvas);
+    pop();
+    push();
+    strokeWeight(2+(8-SizeOfCircle)*0.25);
     line(Screen.XCanvas, mouseY, mouseX, mouseY);
-    if (IsCircleIncreasing) {
+    pop();
+    DrawIsoEntalphyCoolingLine();
+    DrawIsoTemperatureCoolingLine();
+    if(IsCircleIncreasing){
         SizeOfCircle += 0.1;
-    } else {
+    }else{
         SizeOfCircle -= 0.1;
     }
-    if(SizeOfCircle > 8){IsCircleIncreasing = false}
-    if(SizeOfCircle < 0){IsCircleIncreasing = true }
+    if (SizeOfCircle > 8){IsCircleIncreasing = false}
+    if (SizeOfCircle < 0){IsCircleIncreasing = true }
     circle(mouseX, mouseY, 13 + SizeOfCircle);
-    text((Screen.SelectedHumidity).toFixed(1) + ' %', mouseX + 10, mouseY - 10);
+    text((Screen.SelectedHumidity*100).toFixed(1) + ' %', mouseX + 10, mouseY - 10);
     text((WaterOverMouse.Temperature - 273.15).toFixed(2) + ' °C', mouseX + 10, Screen.YCanvas - 10);
-    text(WaterOverMouse.DensityVapor.toFixed(3) + ' kg Agua/m3', Screen.XCanvas - 108, mouseY - 10);
+    text(WaterOverMouse.EnthalpyVaporization.toFixed(3) + ' kJ/kg', Screen.XCanvas - 95, mouseY - 10);
+    function DrawIsoTemperatureCoolingLine(){
+        let Enthalpy = Vapor.GetEnthalpy(WaterOverMouse.Temperature, 1, DryGas);
+        // Draw
+        let YScreen = map(Enthalpy, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin);
+        if((mouseY - YScreen) > (Screen.Ymax - Screen.Ymin)*0.05){
+            push();
+            strokeWeight(0.5);
+            stroke(50,50,50+SizeOfCircle*8);
+            line(mouseX, mouseY, mouseX, YScreen);
+            line(mouseX, YScreen, Screen.Xmax, YScreen);
+            fill(80);
+            pop();
+            text(Enthalpy.toFixed(3) + ' kJ/kg', Screen.XCanvas - 95, YScreen - 10);
+            return;
+        }
+    }
+    function DrawIsoEntalphyCoolingLine(){
+        let XScreen = map(WaterOverMouse.WetBulbTemperature,Screen.tempMin,Screen.tempMax,Screen.Xmin,Screen.Xmax);
+        if((mouseX-XScreen) > (Screen.Xmax-Screen.Xmin)*0.01){
+            push();
+            line(mouseX, mouseY, XScreen, mouseY);
+            line(XScreen, mouseY, XScreen, Screen.Ymax);
+            text((WaterOverMouse.WetBulbTemperature - 273.15).toFixed(2) + ' °C', XScreen - 55, Screen.Ymax - 10);
+            pop();
+        }
+    }
 }
 function UpdateComponent(ComponentOfDOM) {
     if (ComponentOfDOM.value() == '') {
@@ -428,9 +417,47 @@ function ButtonsConfiguration() {
         FromXToDOMs();
     }
 }
-function mouseWheel(event) {
+function mouseWheel(event){
     let newPressure = (parseFloat(inpPressure.value()) - event.delta * 0.01).toFixed(2);
-    inpMaxEnthalpy.value(Screen.HMaxSP * newPressure / inpPressure.value());
-    inpMinEnthalpy.value(Screen.HMinSP * newPressure / inpPressure.value());
+    inpMaxEnthalpy.value(Screen.EnthalpyMaxSP * newPressure / inpPressure.value());
+    inpMinEnthalpy.value(Screen.EnthalpyMinSP * newPressure / inpPressure.value());
     inpPressure.value(newPressure);
+}
+function WetGasCalculations(Gas, MolarHumidity){
+    NewGas = new FlowStream();
+    NewGas.Temperature = Gas.Temperature;
+    NewGas.Pressure = Gas.Pressure;
+    NewGas.x[1] = Gas.x[1];
+    NewGas.x[2] = Gas.x[2];
+    NewGas.x[3] = Gas.x[3];
+    NewGas.x[4] = Gas.x[4];
+    NewGas.x[5] = Gas.x[5];
+    NewGas.x[6] = Gas.x[6];
+    NewGas.x[7] = Gas.x[7];
+    NewGas.x[8] = Gas.x[8];
+    NewGas.x[9] = Gas.x[9];
+    NewGas.x[10] = Gas.x[10];
+    NewGas.x[11] = Gas.x[11];
+    NewGas.x[12] = Gas.x[12];
+    NewGas.x[13] = Gas.x[13];
+    NewGas.x[14] = Gas.x[14];
+    NewGas.x[15] = Gas.x[15];
+    NewGas.x[16] = Gas.x[16];
+    NewGas.x[17] = Gas.x[17];
+    NewGas.x[18] = Gas.x[18];
+    NewGas.x[19] = Gas.x[19];
+    NewGas.x[20] = Gas.x[20];
+    NewGas.x[21] = Gas.x[21];
+    NewGas.addWater(MolarHumidity * 0.01);
+    let SumOfComponents = 0;
+    for (let i = 1; i <= 21; i++){
+        SumOfComponents += NewGas.x[i];
+    }
+    SumOfComponents = 1/SumOfComponents;
+    for (let i = 1; i <= 21; i++){
+        NewGas.x[i] = NewGas.x[i]*SumOfComponents;
+    }
+    NewGas.CalculateDensity(1);
+    NewGas.MassDensity = NewGas.Density * NewGas.MolarMass;
+    return NewGas;
 }
