@@ -126,27 +126,27 @@ function CreateTheXInputs(){
     aux1[0]=aux1[0]+SeparationX;
     aux1[1]=aux1[1]+SeparationY;
 }
-function FromXToDOMs(){
-    inpMethane.value((DryGas.x[1]*100).toString());
-    inpNitrogen.value((DryGas.x[2]*100).toString());
-    inpCarbonDioxide.value((DryGas.x[3]*100).toString());
-    inpEthane.value((DryGas.x[4]*100).toString());
-    inpPropane.value((DryGas.x[5]*100).toString());
-    inpIsoButane.value((DryGas.x[6]*100).toString());
-    inpnButane.value((DryGas.x[7]*100).toString());
-    inpIsopentane.value((DryGas.x[8]*100).toString());    
-    inpnPentane.value((DryGas.x[9]*100).toString());
-    inpnHexane.value((DryGas.x[10]*100).toString());
-    inpnHeptane.value((DryGas.x[11]*100).toString());
-    inpnOctane.value((DryGas.x[12]*100).toString());
-    inpnNonane.value((DryGas.x[13]*100).toString());
-    inpnDecane.value((DryGas.x[14]*100).toString());
-    inpHydrogen.value((DryGas.x[15]*100).toString());
-    inpOxygen.value((DryGas.x[16]*100).toString());
-    inpCarbonMonoxide.value((DryGas.x[17]*100).toString());
-    inpHydrogenSulfide.value((DryGas.x[19]*100).toString());
-    inpHelium.value((DryGas.x[20]*100).toString());
-    inpArgon.value((DryGas.x[21]*100).toString());
+function FromXToDOMs(Point){
+    inpMethane.value((Point.DryGas.x[1]*100).toString());
+    inpNitrogen.value((Point.DryGas.x[2]*100).toString());
+    inpCarbonDioxide.value((Point.DryGas.x[3]*100).toString());
+    inpEthane.value((Point.DryGas.x[4]*100).toString());
+    inpPropane.value((Point.DryGas.x[5]*100).toString());
+    inpIsoButane.value((Point.DryGas.x[6]*100).toString());
+    inpnButane.value((Point.DryGas.x[7]*100).toString());
+    inpIsopentane.value((Point.DryGas.x[8]*100).toString());    
+    inpnPentane.value((Point.DryGas.x[9]*100).toString());
+    inpnHexane.value((Point.DryGas.x[10]*100).toString());
+    inpnHeptane.value((Point.DryGas.x[11]*100).toString());
+    inpnOctane.value((Point.DryGas.x[12]*100).toString());
+    inpnNonane.value((Point.DryGas.x[13]*100).toString());
+    inpnDecane.value((Point.DryGas.x[14]*100).toString());
+    inpHydrogen.value((Point.DryGas.x[15]*100).toString());
+    inpOxygen.value((Point.DryGas.x[16]*100).toString());
+    inpCarbonMonoxide.value((Point.DryGas.x[17]*100).toString());
+    inpHydrogenSulfide.value((Point.DryGas.x[19]*100).toString());
+    inpHelium.value((Point.DryGas.x[20]*100).toString());
+    inpArgon.value((Point.DryGas.x[21]*100).toString());
 }
 function disappearTheDOMs(trueforyes){
     if (trueforyes){
@@ -203,33 +203,33 @@ function disappearTheDOMs(trueforyes){
         inpMaxEnthalpy.elt.style.visibility='hidden';
     }
 }
-function FromDOMsToX(){
-    DryGas.x[1]=UpdateComponent(inpMethane);
-    DryGas.x[2]=UpdateComponent(inpNitrogen);
-    DryGas.x[3]=UpdateComponent(inpCarbonDioxide);
-    DryGas.x[4]=UpdateComponent(inpEthane);
-    DryGas.x[5]=UpdateComponent(inpPropane);
-    DryGas.x[6]=UpdateComponent(inpIsoButane);
-    DryGas.x[7]=UpdateComponent(inpnButane);
-    DryGas.x[8]=UpdateComponent(inpIsopentane);
-    DryGas.x[9]=UpdateComponent(inpnPentane);
-    DryGas.x[10]=UpdateComponent(inpnHexane);
-    DryGas.x[11]=UpdateComponent(inpnHeptane);
-    DryGas.x[12]=UpdateComponent(inpnOctane);
-    DryGas.x[13]=UpdateComponent(inpnNonane);
-    DryGas.x[14]=UpdateComponent(inpnDecane);
-    DryGas.x[15]=UpdateComponent(inpHydrogen);
-    DryGas.x[16]=UpdateComponent(inpOxygen);
-    DryGas.x[17]=UpdateComponent(inpCarbonMonoxide);
-    DryGas.x[19]=UpdateComponent(inpHydrogenSulfide);
-    DryGas.x[20]=UpdateComponent(inpHelium);
-    DryGas.x[21]=UpdateComponent(inpArgon);
+function FromDOMsToX(Point){
+    Point.DryGas.x[1]=UpdateComponent(inpMethane);
+    Point.DryGas.x[2]=UpdateComponent(inpNitrogen);
+    Point.DryGas.x[3]=UpdateComponent(inpCarbonDioxide);
+    Point.DryGas.x[4]=UpdateComponent(inpEthane);
+    Point.DryGas.x[5]=UpdateComponent(inpPropane);
+    Point.DryGas.x[6]=UpdateComponent(inpIsoButane);
+    Point.DryGas.x[7]=UpdateComponent(inpnButane);
+    Point.DryGas.x[8]=UpdateComponent(inpIsopentane);
+    Point.DryGas.x[9]=UpdateComponent(inpnPentane);
+    Point.DryGas.x[10]=UpdateComponent(inpnHexane);
+    Point.DryGas.x[11]=UpdateComponent(inpnHeptane);
+    Point.DryGas.x[12]=UpdateComponent(inpnOctane);
+    Point.DryGas.x[13]=UpdateComponent(inpnNonane);
+    Point.DryGas.x[14]=UpdateComponent(inpnDecane);
+    Point.DryGas.x[15]=UpdateComponent(inpHydrogen);
+    Point.DryGas.x[16]=UpdateComponent(inpOxygen);
+    Point.DryGas.x[17]=UpdateComponent(inpCarbonMonoxide);
+    Point.DryGas.x[19]=UpdateComponent(inpHydrogenSulfide);
+    Point.DryGas.x[20]=UpdateComponent(inpHelium);
+    Point.DryGas.x[21]=UpdateComponent(inpArgon);
     //Normalization
     SumOfComponents=0;
     for(let i=1; i <= 21; i++){
-        SumOfComponents=SumOfComponents+DryGas.x[i];
+        SumOfComponents=SumOfComponents+Point.DryGas.x[i];
     }
     for(let i=1; i <= 21; i++){
-        DryGas.x[i]=DryGas.x[i]/SumOfComponents;
+        Point.DryGas.x[i]=Point.DryGas.x[i]/SumOfComponents;
     }
 }
