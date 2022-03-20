@@ -139,12 +139,12 @@ function setup() {
     MouseOver.DryGas.addArgon(0.01);
     //
     AirInlet.DryGas = MouseOver.DryGas.CopyAsValue();
-    AirInlet.mouseX = 600;
-    AirInlet.mouseY = 600;
+    AirInlet.Water.Temperature = 290;
+    AirInlet.Water.EnthalpyVaporization = 0;
     AirInlet.Color = [10, 30, 200];
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
-    AirOutlet.mouseX = 900;
-    AirOutlet.mouseY = 400;
+    AirOutlet.Water.Temperature = 310;
+    AirOutlet.Water.EnthalpyVaporization = 60;
     AirOutlet.Color = [200, 30, 10];
     //
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
@@ -153,9 +153,13 @@ function setup() {
     FromXToDOMs(MouseOver);
 }
 function draw() {
+    MoveToTheRequestedRange();
+    AirInlet.mouseX = map(AirInlet.Water.Temperature, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
+    AirInlet.mouseY = map(AirInlet.Water.EnthalpyVaporization, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin),
+    AirOutlet.mouseX = map(AirOutlet.Water.Temperature, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
+    AirOutlet.mouseY = map(AirOutlet.Water.EnthalpyVaporization, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin),
     MouseOver.mouseX = mouseX;
     MouseOver.mouseY = mouseY;
-    MoveToTheRequestedRange();
     if (webButtons[0].activated) {
         image(Background[1], 0, 0);
         let SumOfComponents = 0;
@@ -195,7 +199,7 @@ function draw() {
         AirInlet.CalculateProperties();
         AirOutlet.CalculateProperties();
         DrawAirEffects();
-        if (mouseX > Screen.Xmin && mouseX < Screen.Xmax && mouseY > Screen.Ymin && mouseY < Screen.Ymax) {
+        if (mouseX > Screen.Xmin && mouseX < Screen.Xmax && mouseY > Screen.Ymin && mouseY < Screen.Ymax){
             MouseOver.CalculateProperties();
             DrawOverTheMouseEffects();
         }
@@ -327,11 +331,11 @@ function DrawOverTheMouseEffects() {
         text('Dew Temperature: ' + (MouseOver.Water.DewTemperature - 273.15).toFixed(1) + '°C', 10, aux); aux += 20;
         text('Wet bul Temperature: ' + (MouseOver.Water.WetBulbTemperature - 273.15).toFixed(1) + '°C', 10, aux); aux += 20;
         text('Relative Humidity: ' + (100 * MouseOver.SelectedHumidity).toFixed(1) + ' %', 10, aux); aux += 20;
-        text('Absolute Humidity: ' + (1000 * MouseOver.AbsoluteMassHumidity).toFixed(3) + ' g agua / kg gas seco', 10, aux); aux += 20;
-        text('Enthalpy: ' + (MouseOver.Water.EnthalpyVaporization).toFixed(2) + ' kJ/kg gas seco', 10, aux); aux += 20;
+        text('Absolute Humidity: ' + (1000 * MouseOver.AbsoluteMassHumidity).toFixed(3) + ' g water / kg dry gas', 10, aux); aux += 20;
+        text('Enthalpy: ' + (MouseOver.Water.EnthalpyVaporization).toFixed(2) + ' kJ / kg dry gas', 10, aux); aux += 20;
         text('Pressure: ' + MouseOver.WetGas.Pressure.toFixed(1) + ' kPa', 10, aux); aux += 20;
         text('Density: ' + MouseOver.WetGas.MassDensity.toFixed(3) + ' kg/m3', 10, aux); aux += 20;
-        text('Cooling Tower Coefficient: ' + CoolingTowerCoefficient.toFixed(3) + ' ???', 10, aux); aux += 20;
+        text('Cooling Tower Coefficient: ' + CoolingTowerCoefficient.toFixed(2) + ' °C kg / KJ', 10, aux); aux += 20;
         text('Composition: ', 10, aux); aux += 20;
         WriteElementIfExist('Methane', 1);
         WriteElementIfExist('Nitrogen', 2);
@@ -558,12 +562,14 @@ function DraggingPointsArround() {
             Math.abs(mouseY - AirInlet.mouseY) < 16) {
             AirInlet.mouseX = mouseX;
             AirInlet.mouseY = mouseY;
+            AirInlet.CalculateProperties();
             return;
         }
         if (Math.abs(mouseX - AirOutlet.mouseX) < 16 &&
             Math.abs(mouseY - AirOutlet.mouseY) < 16) {
             AirOutlet.mouseX = mouseX;
             AirOutlet.mouseY = mouseY;
+            AirOutlet.CalculateProperties();
             return;
         }
     }
