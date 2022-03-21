@@ -63,6 +63,15 @@ let AirInlet = new PointInChart();
 let AirOutlet = new PointInChart();
 let MinimumAirOutlet = new PointInChart();
 let CoolingTowerCoefficient = 0;
+let LG = {
+    Actual:0,
+    Minimum:0,
+    Relation:0,
+    EnthalpyAtMinimum:0,
+    HumidityAtMinimum:0,
+    mouseX:0,
+    mouseY:0
+}
 let Screen = {
     XCanvas: 1360,
     YCanvas: 768,
@@ -246,7 +255,7 @@ function AnimationsOverThePoint(Point) {
     } else {
         Point.Circle.Size -= 0.1;
     }
-    if (Point.Circle.Size > 8) { Point.Circle.IsIncreasing = false }
+    if (Point.Circle.Size > 8) { Point.Circle.IsIncreasing = false}
     if (Point.Circle.Size < 0) { Point.Circle.IsIncreasing = true }
     push();
     fill(Point.Color);
@@ -290,6 +299,16 @@ function DrawIsoEntalphyCoolingLine(Point) {
 }
 function DrawAirEffects() {
     DrawOperationalLine();
+    //
+    LG.Actual = (AirOutlet.Water.EnthalpyVaporization - AirInlet.Water.EnthalpyVaporization)/(AirOutlet.Water.Temperature - AirInlet.Water.Temperature);
+    LG.HumidityAtMinimum = FindTheMinimumLG();
+    LG.EnthalpyAtMinimum = Vapor.GetEnthalpy(AirOutlet.Water.Temperature,LG.HumidityAtMinimum,AirOutlet.DryGas);
+    LG.Minimum = (LG.EnthalpyAtMinimum - AirInlet.Water.EnthalpyVaporization)/(AirOutlet.Water.Temperature - AirInlet.Water.Temperature);
+    LG.Relation = LG.Actual / LG.Minimum;
+    LG.mouseX = AirOutlet.mouseX;
+    LG.mouseY = map(LG.EnthalpyAtMinimum, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin);
+    line(AirInlet.mouseX,AirInlet.mouseY,LG.mouseX,LG.mouseY);
+    //
     DrawIsoEntalphyCoolingLine(AirInlet);
     DrawIsoTemperatureLine(AirInlet);
     AnimationsOverThePoint(AirInlet);
@@ -353,6 +372,8 @@ function DrawOverTheMouseEffects() {
         text('Pressure: ' + MouseOver.WetGas.Pressure.toFixed(1) + ' kPa', 10, aux); aux += 20;
         text('Density: ' + MouseOver.WetGas.MassDensity.toFixed(3) + ' kg/m3', 10, aux); aux += 20;
         text('Cooling Tower Coefficient: ' + CoolingTowerCoefficient.toFixed(2) + ' °C kg / KJ', 10, aux); aux += 20;
+        text('L/G: ' + LG.Actual.toFixed(2) + ' KJ / °C kg', 10, aux); aux += 20;
+        text('L/G / L/G min: ' + LG.Relation.toFixed(2) + '', 10, aux); aux += 20;
         text('Composition: ', 10, aux); aux += 20;
         WriteElementIfExist('Methane', 1);
         WriteElementIfExist('Nitrogen', 2);
