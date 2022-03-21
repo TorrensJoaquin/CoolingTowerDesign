@@ -41,10 +41,27 @@ class PointInChart {
         this.AbsoluteMassHumidity = this.Water.DensityVapor / this.DryGas.MassDensity;
         this.WetGas = WetGasCalculations(this.DryGas, this.AbsoluteMolarHumidity);
     }
+    CopyAsValue(){
+        let NewPoint = new PointInChart();
+        NewPoint.mouseX = this.mouseX;
+        NewPoint.mouseY = this.mouseY;
+        NewPoint.AbsoluteMolarHumidity = this.AbsoluteMolarHumidity;
+        NewPoint.AbsoluteMassHumidity = this.AbsoluteMassHumidity;
+        NewPoint.SelectedHumidity = this.SelectedHumidity;
+        NewPoint.Circle.IsIncreasing = this.Circle.IsIncreasing;
+        NewPoint.Circle.Size = this.Circle.Size;
+        NewPoint.Water = this.Water.CopyAsValue();
+        NewPoint.DryGas = this.DryGas.CopyAsValue();
+        NewPoint.WetGas = this.WetGas.CopyAsValue();
+        NewPoint.WaterSaturation = this.WaterSaturation.CopyAsValue();
+        NewPoint.Color = this.Color;
+        return NewPoint
+    }
 }
 let MouseOver = new PointInChart();
 let AirInlet = new PointInChart();
 let AirOutlet = new PointInChart();
+let MinimumAirOutlet = new PointInChart();
 let CoolingTowerCoefficient = 0;
 let Screen = {
     XCanvas: 1360,
@@ -217,7 +234,7 @@ function UploadTheInputs() {
     Screen.EnthalpyMinSP = UpdateComponent(inpMinEnthalpy);
     Screen.EnthalpyMaxSP = UpdateComponent(inpMaxEnthalpy);
 }
-function AnimationsOverTheMouse(Point) {
+function AnimationsOverThePoint(Point) {
     push();
     strokeWeight(2 + Point.Circle.Size * 0.25);
     line(Point.mouseX, Point.mouseY, Point.mouseX, Screen.YCanvas);
@@ -275,10 +292,10 @@ function DrawAirEffects() {
     DrawOperationalLine();
     DrawIsoEntalphyCoolingLine(AirInlet);
     DrawIsoTemperatureLine(AirInlet);
-    AnimationsOverTheMouse(AirInlet);
+    AnimationsOverThePoint(AirInlet);
     DrawIsoEntalphyCoolingLine(AirOutlet);
     DrawIsoTemperatureLine(AirOutlet);
-    AnimationsOverTheMouse(AirOutlet);
+    AnimationsOverThePoint(AirOutlet);
     CalculateTowerCoefficient();
 }
 function CalculateTowerCoefficient() {
@@ -571,6 +588,41 @@ function DraggingPointsArround() {
             AirOutlet.mouseY = mouseY;
             AirOutlet.CalculateProperties();
             return;
+        }
+    }
+}
+function FindTheMinimumLG(){
+    let lowerRH = 0;
+    let middleRH = 0.5;
+    let higherRH = 1;
+    for(let i=0; i<40; i++){
+        if(IsThisOperationLinePossible(middleRH)){
+            lowerRH=middleRH;
+        }else{
+            higherRH=middleRH;
+        }
+        middleRH = (lowerRH + higherRH)*0.5;
+    }
+    return middleRH;
+    function IsThisOperationLinePossible(RH){
+        let DeltaT = (AirOutlet.Water.Temperature - AirInlet.Water.Temperature);
+        if (DeltaT > 1) {
+            let Iterations = 50;
+            let Resolutions = DeltaT / Iterations;
+            let DeltaH = Vapor.GetEnthalpy(AirOutlet.Water.Temperature, RH, MouseOver.DryGas) - AirInlet.Water.EnthalpyVaporization;
+            let Initial = [AirInlet.Water.Temperature, AirInlet.Water.EnthalpyVaporization];
+            let SlopeTimesRes = (DeltaH) / (DeltaT) * Resolutions;
+            CoolingTowerCoefficient = 0;
+            let SaturationEnthalpy = 0;
+            let Final = [];
+            for (let i = 0; i < Iterations; i++) {
+                SaturationEnthalpy = Vapor.GetEnthalpy(Initial[0], 1, MouseOver.DryGas) - Initial[1];
+                if(SaturationEnthalpy < 0){return false}
+                Final = [Initial[0] + Resolutions, Initial[1] + SlopeTimesRes];
+                CoolingTowerCoefficient += Resolutions * 1/(SaturationEnthalpy);
+                Initial = Final;
+            }
+            return true;
         }
     }
 }
