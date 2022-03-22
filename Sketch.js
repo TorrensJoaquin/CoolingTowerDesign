@@ -61,8 +61,8 @@ class PointInChart {
 let MouseOver = new PointInChart();
 let AirInlet = new PointInChart();
 let AirOutlet = new PointInChart();
-let MinimumAirOutlet = new PointInChart();
 let CoolingTowerCoefficient = 0;
+let NTU = 0;
 let LG = {
     Actual:0,
     Minimum:0,
@@ -165,12 +165,12 @@ function setup() {
     MouseOver.DryGas.addArgon(0.01);
     //
     AirInlet.DryGas = MouseOver.DryGas.CopyAsValue();
-    AirInlet.Water.Temperature = 290;
-    AirInlet.Water.EnthalpyVaporization = 0;
+    AirInlet.Water.Temperature = 303;
+    AirInlet.Water.EnthalpyVaporization = 44;
     AirInlet.Color = [10, 30, 200];
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
-    AirOutlet.Water.Temperature = 310;
-    AirOutlet.Water.EnthalpyVaporization = 60;
+    AirOutlet.Water.Temperature = 318;
+    AirOutlet.Water.EnthalpyVaporization = 123;
     AirOutlet.Color = [200, 30, 10];
     //
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
@@ -304,7 +304,7 @@ function DrawAirEffects() {
     LG.HumidityAtMinimum = FindTheMinimumLG();
     LG.EnthalpyAtMinimum = Vapor.GetEnthalpy(AirOutlet.Water.Temperature,LG.HumidityAtMinimum,AirOutlet.DryGas);
     LG.Minimum = (LG.EnthalpyAtMinimum - AirInlet.Water.EnthalpyVaporization)/(AirOutlet.Water.Temperature - AirInlet.Water.Temperature);
-    LG.Relation = LG.Actual / LG.Minimum;
+    LG.Relation = LG.Minimum / LG.Actual;
     LG.mouseX = AirOutlet.mouseX;
     LG.mouseY = map(LG.EnthalpyAtMinimum, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin);
     line(AirInlet.mouseX,AirInlet.mouseY,LG.mouseX,LG.mouseY);
@@ -321,19 +321,20 @@ function CalculateTowerCoefficient() {
     let DeltaT = (AirOutlet.Water.Temperature - AirInlet.Water.Temperature);
     if (DeltaT > 1) {
         let Iterations = 50;
-        let Resolutions = DeltaT / Iterations;
         let DeltaH = AirOutlet.Water.EnthalpyVaporization - AirInlet.Water.EnthalpyVaporization;
-        let Initial = [AirInlet.Water.Temperature, AirInlet.Water.EnthalpyVaporization];
-        let SlopeTimesRes = (DeltaH) / (DeltaT) * Resolutions;
+        let deltat = DeltaT / Iterations;
+        let deltah = DeltaH / Iterations;
+        let Step = [AirInlet.Water.Temperature + deltat * 0.5, AirInlet.Water.EnthalpyVaporization + deltah * 0.5];
         CoolingTowerCoefficient = 0;
-        let SaturationEnthalpy = 0;
-        let Final = [];
+        NTU = 0;
+        let EnthalpyDifference = 0;
         for (let i = 0; i < Iterations; i++) {
-            SaturationEnthalpy = Vapor.GetEnthalpy(Initial[0], 1, MouseOver.DryGas) - Initial[1];
-            if(SaturationEnthalpy < 0){CoolingTowerCoefficient = 99999;return}
-            Final = [Initial[0] + Resolutions, Initial[1] + SlopeTimesRes];
-            CoolingTowerCoefficient += Resolutions * 1/(SaturationEnthalpy);
-            Initial = Final;
+            EnthalpyDifference = Vapor.GetEnthalpy(Step[0], 1, MouseOver.DryGas) - Step[1];
+            if(EnthalpyDifference < 0){CoolingTowerCoefficient = 99999;return}
+            Step[0] += deltat;
+            Step[1] += deltah;
+            NTU += deltah/EnthalpyDifference;
+            CoolingTowerCoefficient += deltat/EnthalpyDifference;
         }
     }
 }
@@ -361,8 +362,13 @@ function DrawOperationalLine() {
     }
 }
 function DrawOverTheMouseEffects() {
+    let aux = 115;
+    text('Cooling Tower Coefficient: ' + CoolingTowerCoefficient.toFixed(2) + ' °C kg / KJ', 10, aux); aux += 20;
+    text('Number of Transfer Units: ' + NTU.toFixed(2), 10, aux); aux += 20;
+    text('L/G: ' + LG.Actual.toFixed(2) + ' KJ / °C kg', 10, aux); aux += 20;
+    text('L/G min: ' + LG.Minimum.toFixed(2) + ' KJ / °C kg', 10, aux); aux += 20;
+    text('L/G min/ L/G: ' + LG.Relation.toFixed(2) + '', 10, aux); aux += 20;
     if (MouseOver.SelectedHumidity < 0.995) {
-        let aux = 115;
         text('Temperature: ' + (MouseOver.Water.Temperature - 273.15).toFixed(2) + ' °C', 10, aux); aux += 20;
         text('Dew Temperature: ' + (MouseOver.Water.DewTemperature - 273.15).toFixed(1) + '°C', 10, aux); aux += 20;
         text('Wet bul Temperature: ' + (MouseOver.Water.WetBulbTemperature - 273.15).toFixed(1) + '°C', 10, aux); aux += 20;
@@ -371,9 +377,6 @@ function DrawOverTheMouseEffects() {
         text('Enthalpy: ' + (MouseOver.Water.EnthalpyVaporization).toFixed(2) + ' kJ / kg dry gas', 10, aux); aux += 20;
         text('Pressure: ' + MouseOver.WetGas.Pressure.toFixed(1) + ' kPa', 10, aux); aux += 20;
         text('Density: ' + MouseOver.WetGas.MassDensity.toFixed(3) + ' kg/m3', 10, aux); aux += 20;
-        text('Cooling Tower Coefficient: ' + CoolingTowerCoefficient.toFixed(2) + ' °C kg / KJ', 10, aux); aux += 20;
-        text('L/G: ' + LG.Actual.toFixed(2) + ' KJ / °C kg', 10, aux); aux += 20;
-        text('L/G / L/G min: ' + LG.Relation.toFixed(2) + '', 10, aux); aux += 20;
         text('Composition: ', 10, aux); aux += 20;
         WriteElementIfExist('Methane', 1);
         WriteElementIfExist('Nitrogen', 2);
@@ -629,18 +632,16 @@ function FindTheMinimumLG(){
         let DeltaT = (AirOutlet.Water.Temperature - AirInlet.Water.Temperature);
         if (DeltaT > 1) {
             let Iterations = 50;
-            let Resolutions = DeltaT / Iterations;
             let DeltaH = Vapor.GetEnthalpy(AirOutlet.Water.Temperature, RH, MouseOver.DryGas) - AirInlet.Water.EnthalpyVaporization;
             let Initial = [AirInlet.Water.Temperature, AirInlet.Water.EnthalpyVaporization];
-            let SlopeTimesRes = (DeltaH) / (DeltaT) * Resolutions;
-            CoolingTowerCoefficient = 0;
-            let SaturationEnthalpy = 0;
+            let deltat = DeltaT / Iterations;
+            let deltah = DeltaH / Iterations;
+            let EnthalpyDifference = 0;
             let Final = [];
             for (let i = 0; i < Iterations; i++) {
-                SaturationEnthalpy = Vapor.GetEnthalpy(Initial[0], 1, MouseOver.DryGas) - Initial[1];
-                if(SaturationEnthalpy < 0){return false}
-                Final = [Initial[0] + Resolutions, Initial[1] + SlopeTimesRes];
-                CoolingTowerCoefficient += Resolutions * 1/(SaturationEnthalpy);
+                EnthalpyDifference = Vapor.GetEnthalpy(Initial[0], 1, MouseOver.DryGas) - Initial[1];
+                if(EnthalpyDifference < 0){return false}
+                Final = [Initial[0] + deltat, Initial[1] + deltah];
                 Initial = Final;
             }
             return true;
