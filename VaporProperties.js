@@ -111,7 +111,7 @@ let Vapor = {
         Gas1.Temperature = middleTemperature;
         Gas1.CalculateDensity(1);
         Gas1.MassDensity = Gas1.Density * Gas1.MolarMass;
-        AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass;
+        AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass + 25.5462508188823;
         // Absolute Mass Humidity if Saturation is 100%
         DensityVapor = RegretionByPoints(middleTemperature, Vapor.Temperature, Vapor.DensityVapor);
         AbsoluteMassHumidity = DensityVapor/Gas1.MassDensity;
@@ -143,7 +143,7 @@ let Vapor = {
         Gas1.Temperature = middleTemperature;
         Gas1.CalculateDensity(1);
         Gas1.MassDensity = Gas1.Density * Gas1.MolarMass;
-        AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass;
+        AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass + 25.5462508188823;
         // Absolute Mass Humidity if Saturation is 100%
         DensityVapor = RegretionByPoints(middleTemperature, Vapor.Temperature, Vapor.DensityVapor) * RH;
         AbsoluteMassHumidity = DensityVapor/Gas1.MassDensity;
@@ -175,7 +175,7 @@ let Vapor = {
         Gas1.Temperature = Temperature;
         Gas1.CalculateDensity(1);
         Gas1.MassDensity = Gas1.Density * Gas1.MolarMass;
-        AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass;
+        AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass + 25.5462508188823;
         // Absolute Mass Humidity if Saturation is 100%
         DensityVapor = RegretionByPoints(Temperature, Vapor.Temperature, Vapor.DensityVapor) * middleRH;
         AbsoluteMassHumidity = DensityVapor/Gas1.MassDensity;
@@ -203,7 +203,7 @@ let Vapor = {
     Gas1.Temperature = Temperature;
     Gas1.CalculateDensity(1);
     Gas1.MassDensity = Gas1.Density * Gas1.MolarMass;
-    AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass;
+    AirContributionToEnthalpy = Gas1.H / Gas1.MolarMass + 25.5462508188823;
     // Absolute Mass Humidity if Saturation is 100%
     DensityVapor = RegretionByPoints(Temperature, Vapor.Temperature, Vapor.DensityVapor) * RH;
     AbsoluteMassHumidity = DensityVapor/Gas1.MassDensity;

@@ -166,11 +166,11 @@ function setup() {
     //
     AirInlet.DryGas = MouseOver.DryGas.CopyAsValue();
     AirInlet.Water.Temperature = 303;
-    AirInlet.Water.EnthalpyVaporization = 44;
+    AirInlet.Water.EnthalpyVaporization = 65;
     AirInlet.Color = [10, 30, 200];
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
     AirOutlet.Water.Temperature = 318;
-    AirOutlet.Water.EnthalpyVaporization = 123;
+    AirOutlet.Water.EnthalpyVaporization = 144;
     AirOutlet.Color = [200, 30, 10];
     //
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
@@ -333,7 +333,7 @@ function CalculateTowerCoefficient() {
             if(EnthalpyDifference < 0){CoolingTowerCoefficient = 99999;return}
             Step[0] += deltat;
             Step[1] += deltah;
-            NTU += deltah/EnthalpyDifference;
+            NTU += 1/EnthalpyDifference;
             CoolingTowerCoefficient += deltat/EnthalpyDifference;
         }
     }
