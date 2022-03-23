@@ -165,12 +165,12 @@ function setup() {
     MouseOver.DryGas.addArgon(0.01);
     //
     AirInlet.DryGas = MouseOver.DryGas.CopyAsValue();
-    AirInlet.Water.Temperature = 303;
-    AirInlet.Water.EnthalpyVaporization = 65;
+    AirInlet.Water.Temperature = 283.15;
+    AirInlet.Water.EnthalpyVaporization = 10;
     AirInlet.Color = [10, 30, 200];
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
-    AirOutlet.Water.Temperature = 318;
-    AirOutlet.Water.EnthalpyVaporization = 144;
+    AirOutlet.Water.Temperature = 308.15;
+    AirOutlet.Water.EnthalpyVaporization = 85;
     AirOutlet.Color = [200, 30, 10];
     //
     AirOutlet.DryGas = MouseOver.DryGas.CopyAsValue();
