@@ -58,6 +58,33 @@ class PointInChart {
         return NewPoint
     }
 }
+class Screen_clc {
+    constructor() {
+        this.XCanvas= 1360,
+        this.YCanvas= 768,
+        this.Xmin= 0,
+        this.Xmax= 1360,
+        this.Ymin= 92,
+        this.Ymax= 768,
+        this.EnthalpyMin= -30,       // kJ/Kg d.a.
+        this.EnthalpyMax= 120,    // kJ/Kg d.a.
+        this.EnthalpyMinSP= -30,     // kJ/Kg d.a.
+        this.EnthalpyMaxSP= 120,  // kJ/Kg d.a.
+        this.EnthalpyVelMax= 0.5,
+        this.tempMin= 273.15 - 10,  //°K
+        this.tempMax= 273.15 + 55,  //°K
+        this.tempMinSP= -10, //°C
+        this.tempMaxSP= 55,  //°C
+        this.tempVelMax= 0.5
+    }
+    XCoordinate(_Temperature){
+        return map(_Temperature, this.tempMin, this.tempMax, this.Xmin, this.Xmax);
+    }
+    YCoordinate(_Enthalpy){
+        return map(_Enthalpy, this.EnthalpyMin, this.EnthalpyMax, this.Ymax, this.Ymin);
+    }
+}
+let Screen = new Screen_clc();
 let MouseOver = new PointInChart();
 let AirInlet = new PointInChart();
 let AirOutlet = new PointInChart();
@@ -71,24 +98,6 @@ let LG = {
     HumidityAtMinimum:0,
     mouseX:0,
     mouseY:0
-}
-let Screen = {
-    XCanvas: 1360,
-    YCanvas: 768,
-    Xmin: 0,
-    Xmax: 1360,
-    Ymin: 92,
-    Ymax: 768,
-    EnthalpyMin: -30,       // kJ/Kg d.a.
-    EnthalpyMax: 120,    // kJ/Kg d.a.
-    EnthalpyMinSP: -30,     // kJ/Kg d.a.
-    EnthalpyMaxSP: 120,  // kJ/Kg d.a.
-    EnthalpyVelMax: 0.5,
-    tempMin: 273.15 - 10,  //°K
-    tempMax: 273.15 + 55,  //°K
-    tempMinSP: -10, //°C
-    tempMaxSP: 55,  //°C
-    tempVelMax: 0.5,
 }
 function MoveToTheRequestedRange() {
     if (isNumber(Screen.EnthalpyMinSP)) {
@@ -180,10 +189,10 @@ function setup() {
 }
 function draw() {
     MoveToTheRequestedRange();
-    AirInlet.mouseX = map(AirInlet.Water.Temperature, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
-    AirInlet.mouseY = map(AirInlet.Water.EnthalpyVaporization, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin),
-    AirOutlet.mouseX = map(AirOutlet.Water.Temperature, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
-    AirOutlet.mouseY = map(AirOutlet.Water.EnthalpyVaporization, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin),
+    AirInlet.mouseX = Screen.XCoordinate(AirInlet.Water.Temperature);
+    AirInlet.mouseY = Screen.YCoordinate(AirInlet.Water.EnthalpyVaporization);
+    AirOutlet.mouseX = Screen.XCoordinate(AirOutlet.Water.Temperature);
+    AirOutlet.mouseY = Screen.YCoordinate(AirOutlet.Water.EnthalpyVaporization);
     MouseOver.mouseX = mouseX;
     MouseOver.mouseY = mouseY;
     if (webButtons[0].activated) {
@@ -268,7 +277,7 @@ function AnimationsOverThePoint(Point) {
 function DrawIsoTemperatureLine(Point) {
     let Enthalpy = Vapor.GetEnthalpy(Point.Water.Temperature, 1, Point.DryGas);
     // Draw
-    let YScreen = map(Enthalpy, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin);
+    let YScreen = Screen.YCoordinate(Enthalpy);
     if ((Point.mouseY - YScreen) > (Screen.Ymax - Screen.Ymin) * 0.05) {
         push();
         strokeWeight(0.5);
@@ -284,7 +293,7 @@ function DrawIsoTemperatureLine(Point) {
     }
 }
 function DrawIsoEntalphyCoolingLine(Point) {
-    let XScreen = map(Point.Water.WetBulbTemperature, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax);
+    let XScreen = Screen.XCoordinate(Point.Water.WetBulbTemperature);
     if ((Point.mouseX - XScreen) > (Screen.Xmax - Screen.Xmin) * 0.01) {
         push();
         stroke(Point.Color[0], Point.Color[1], Point.Color[2] + Point.Circle.Size * 8);
@@ -306,7 +315,7 @@ function DrawAirEffects() {
     LG.Minimum = (LG.EnthalpyAtMinimum - AirInlet.Water.EnthalpyVaporization)/(AirOutlet.Water.Temperature - AirInlet.Water.Temperature);
     LG.Relation = LG.Minimum / LG.Actual;
     LG.mouseX = AirOutlet.mouseX;
-    LG.mouseY = map(LG.EnthalpyAtMinimum, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin);
+    LG.mouseY = Screen.YCoordinate(LG.EnthalpyAtMinimum);
     line(AirInlet.mouseX,AirInlet.mouseY,LG.mouseX,LG.mouseY);
     //
     DrawIsoEntalphyCoolingLine(AirInlet);
@@ -422,12 +431,12 @@ function DrawSaturationLine() {
     let Old = {
         Temperature: 0,
         Enthalpy: 0,
-        TemperatureScreen: map(Screen.tempMin, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
-        EnthalpyScreen: map(Screen.EnthalpyMax, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymin, Screen.Ymax)
+        TemperatureScreen: Screen.XCoordinate(Screen.tempMin),
+        EnthalpyScreen: Screen.YCoordinate(Screen.EnthalpyMax)
     }
     let New = {
-        TemperatureScreen: map(Screen.tempMin, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax),
-        EnthalpyScreen: map(Screen.EnthalpyMin, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymin, Screen.Ymax)
+        TemperatureScreen: Screen.XCoordinate(Screen.tempMin),
+        EnthalpyScreen: Screen.YCoordinate(Screen.EnthalpyMin)
     }
     let Resolution = 100;
     let Temperature = 0;
@@ -436,8 +445,8 @@ function DrawSaturationLine() {
         Temperature = map(i, 0, Resolution - 1, Screen.tempMin, Screen.tempMax);
         Enthalpy = Vapor.GetEnthalpy(Temperature, 1, MouseOver.DryGas);
         // Draw
-        New.TemperatureScreen = map(Temperature, Screen.tempMin, Screen.tempMax, Screen.Xmin, Screen.Xmax);
-        New.EnthalpyScreen = map(Enthalpy, Screen.EnthalpyMin, Screen.EnthalpyMax, Screen.Ymax, Screen.Ymin);
+        New.TemperatureScreen = Screen.XCoordinate(Temperature);
+        New.EnthalpyScreen = Screen.YCoordinate(Enthalpy);
         line(Old.TemperatureScreen, Old.EnthalpyScreen, New.TemperatureScreen, New.EnthalpyScreen);
         //
         Old.TemperatureScreen = New.TemperatureScreen;
